@@ -4,6 +4,7 @@ defmodule Server.Schemas.Token do
   use Ecto.Schema
 
   import Ecto.Changeset
+  import Server.Helpers
 
   @derive {Poison.Encoder, except: [:__meta__]}
   schema "tokens" do
@@ -25,7 +26,7 @@ defmodule Server.Schemas.Token do
   end
 
   defp get_token_metas(params) do
-    issued_at = DateTime.utc_now() |> DateTime.to_unix()
+    issued_at = get_timestamp()
     {:ok, ttl} = Application.fetch_env(:server, :ttl)
     expire_at = issued_at + ttl
     seed = generate_seed()
@@ -38,10 +39,6 @@ defmodule Server.Schemas.Token do
 
     token = generate_token(params.user, issued_at, expire_at, seed)
     metas |> Map.put(:token, token)
-  end
-
-  defp generate_seed do
-    (:random.uniform() * :math.pow(10, 9)) |> round
   end
 
   defp generate_token(user, issued_at, expire_at, seed) do

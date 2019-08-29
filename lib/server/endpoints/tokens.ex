@@ -1,7 +1,7 @@
 defmodule Server.Endpoints.Tokens do
   @moduledoc "Handling /tokens endpoints"
 
-  import Ecto.Query
+  import Server.Helpers
 
   use Plug.Router
   use Plug.ErrorHandler
@@ -38,9 +38,14 @@ defmodule Server.Endpoints.Tokens do
   end
 
   get "/:token" do
+    now = get_timestamp()
+
     case Repo.get_by(Token, token: token) do
-      nil -> send_resp(conn, 404, Poison.encode!(%{valid: false}))
-      _ -> send_resp(conn, 200, Poison.encode!(%{valid: true}))
+      %Token{expire_at: expire_at} when expire_at < now ->
+        send_resp(conn, 200, Poison.encode!(%{valid: true}))
+
+      _ ->
+        send_resp(conn, 404, Poison.encode!(%{valid: false}))
     end
   end
 
